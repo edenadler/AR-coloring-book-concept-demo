@@ -1,0 +1,145 @@
+<html>
+    <body>
+        <video id="video" autoplay width="500" height="500"></video>
+        <canvas id="canvas" width="500" height="500"></canvas>
+        <input type="checkbox" id="red" name="red" value="red">
+        <label for="red">Red</label>
+        <input type="checkbox" id="blue" name="blue" value="blue">
+        <label for="blue">Blue</label>
+        <input type="checkbox" id="green" name="green" value="green">
+        <label for="green">Green</label>
+        <input type="checkbox" id="purple" name="purple" value="purple">
+        <label for="purple">Purple</label>
+        <input type="checkbox" id="yellow" name="yellow" value="yellow">
+        <label for="yellow">Yellow</label>
+        <input type="checkbox" id="orange" name="orange" value="orange">
+        <label for="orange">Orange</label>
+        <script>
+
+        let video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext('2d');
+        const red = document.getElementById("red");
+        const blue = document.getElementById("blue");
+        const green = document.getElementById("green");
+        const RED_MAX = 360;
+        const RED_MIN = 330;
+        const PURPLE_MAX = 329;
+        const PURPLE_MIN = 265;
+        const BLUE_MAX = 264;
+        const BLUE_MIN = 180;
+        const GREEN_MAX = 179;
+        const GREEN_MIN = 80;
+        const YELLOW_MAX = 79;
+        const YELLOW_MIN = 46;
+        const ORANGE_MAX = 45;
+        const ORANGE_MIN = 6;
+        
+
+        navigator.mediaDevices
+            .getUserMedia({
+                video: true,
+                audio: false,
+            })
+            .then((stream) => {
+                console.log("webcam streaming working")
+                video.srcObject = stream;
+            }).catch((error) => {
+                console.warn(error);
+            });
+
+        function pixelChecker(r, g, b, minHue, maxHue, isRed) {
+            // https://gist.github.com/mjackson/5311256
+            r /= 255, g /= 255, b /= 255;
+
+            var max = Math.max(r, g, b), min = Math.min(r, g, b);
+            var h, s, v = max;
+
+            var d = max - min;
+            s = max == 0 ? 0 : d / max;
+
+            if (max == min) {
+                h = 0; // achromatic
+            } else {
+                switch (max) {
+                case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                case g: h = (b - r) / d + 2; break;
+                case b: h = (r - g) / d + 4; break;
+                }
+
+                // h /= 6;
+                h *= 60;
+                // h %= 360;
+                // if(h < 0){
+                //     h += 360;
+                // }
+
+                h = Math.round(h)
+            }
+
+            // return [ h, s, v ];
+
+            // console.log('h value', h);
+            if (isRed) {
+                return  (h >= minHue && h <= maxHue) || h >= 0 && h < 5
+            } else {
+                return h >= minHue && h <= maxHue
+            }
+        }
+
+
+        function computeFrame() {
+            ctx.drawImage(video, 0, 0, video.width, video.height);
+            const frame = ctx.getImageData(0, 0, video.width, video.height);
+
+            const l = frame.data.length / 4;
+
+            for (let i = 0; i < l; i++) {
+                const grey = (frame.data[i * 4 + 0] + frame.data[i * 4 + 1] + frame.data[i * 4 + 2]) / 3;
+                const r = frame.data[i * 4 + 0];
+                const b = frame.data[i * 4 + 1];
+                const g = frame.data[i * 4 + 2];
+
+                const isRedPixel = pixelChecker(r, b, g, RED_MIN, RED_MAX, true);
+                const isBluePixel = pixelChecker(r, b, g, BLUE_MIN, BLUE_MAX, false);
+                const isGreenPixel = pixelChecker(r, b, g, GREEN_MIN, GREEN_MAX, false);
+                const isPurplePixel = pixelChecker(r, b, g, PURPLE_MIN, PURPLE_MAX, false);
+                const isYellowPixel = pixelChecker(r, b, g, YELLOW_MIN, YELLOW_MAX, false);
+                const isOrangePixel = pixelChecker(r, b, g, ORANGE_MIN, ORANGE_MAX, false);
+
+
+                if (red.checked && isRedPixel) {
+                    
+                } else if (blue.checked && isBluePixel) {
+
+                } else if (green.checked && isGreenPixel) {
+
+                } else if (purple.checked && isPurplePixel) {
+
+                } else if (yellow.checked && isYellowPixel) {
+
+                } else if (orange.checked && isOrangePixel) {
+
+                } else {
+                    frame.data[i * 4 + 0] = grey;
+                    frame.data[i * 4 + 1] = grey;
+                    frame.data[i * 4 + 2] = grey; 
+                }
+            }
+
+            ctx.putImageData(frame, 0, 0);
+        };
+
+        video.addEventListener("loadeddata", async () => {
+
+            // call detect faces every 100 milliseconds or 10 times every second
+            // setInterval(detectFaces, 100);
+
+            setInterval(computeFrame, 16);
+            // setTimeout(() => {
+            //     computeFrame();
+            // }, 16);
+        });
+        </script>
+    </body>
+ </html>
